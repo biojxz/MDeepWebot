@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/MWebRobot.iml" filepath="$PROJECT_DIR$/.idea/MWebRobot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/MDeepWebot.iml" filepath="$PROJECT_DIR$/.idea/MDeepWebot.iml" />
     </modules>
   </component>
 </project>
