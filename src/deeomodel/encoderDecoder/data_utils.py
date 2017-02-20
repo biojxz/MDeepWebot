@@ -6,6 +6,7 @@ import logging
 import os
 import random
 import numpy as np
+import jieba
 
 logging.basicConfig(level=logging.DEBUG)
 class Corpus:
@@ -29,8 +30,12 @@ class Corpus:
         self.tfcounter = dict()
         last_sentence = ''
         for i in range(total_set):
-            post = input1.readline().strip('\n').strip('\r').decode('utf-8').split()
-            response = input2.readline().strip('\n').strip('\r').decode('utf-8').split()
+            post = input1.readline().strip('\n').strip('\r').decode('utf-8')
+            post = post.replace(' ','')
+            post = jieba.lcut(post)
+            response = input2.readline().strip('\n').strip('\r').decode('utf-8')
+            response = response.replace(' ','')
+            response = jieba.lcut(response)
             if len(post) > 1 and len(response) > 1:
                 self.raw_corpus.append((post,response))
                 for char in post:

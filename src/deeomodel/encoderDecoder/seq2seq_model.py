@@ -1,16 +1,23 @@
-#coding:utf-8
+# coding:utf-8
 import tensorflow as tf
-import numpy as np
-from data_utils import Corpus
-from model_configs import HParam
-import os
 import logging
-import jieba
-# http://www.cnblogs.com/edwardbi/p/5559338.html
-
 
 class Model:
-    def __init__(self,input_shape,output_shape,cell_type,cell_layer,cell_size,batch_size,input_vocab_size,output_vocab_size,embedding_size,seq_len=10,sampled_nums=1024):
+    def __init__(self,input_shape,output_shape,cell_type,cell_layer,cell_size,batch_size,input_vocab_size,output_vocab_size,embedding_size,seq_len,sampled_nums):
+        '''
+        最基本的Encoder-Decoder模型
+        :param input_shape:  输入的形状
+        :param output_shape: 输出的形状
+        :param cell_type: RNN使用哪种cell，可选lstm和gru
+        :param cell_layer: 堆叠多层rnn网络，指定堆叠层数
+        :param cell_size: 每层RNN的Cell的数量
+        :param batch_size: 每一个batch的长度
+        :param input_vocab_size: 输入的字典的大小
+        :param output_vocab_size: 输出的字典的大小
+        :param embedding_size: 这里将会进行词嵌入，这里表明词嵌入的长度
+        :param seq_len:
+        :param sampled_nums:
+        '''
         self.output_vocab_size = output_vocab_size
         self.batch_size = batch_size
         self.output_shape = output_shape
@@ -97,91 +104,3 @@ class Model:
 
     def ms_error(self, y_prediction, y_target):
         return tf.square(tf.sub(y_prediction,y_target))
-
-def run(param,isTrain=True):
-    corpus = Corpus(param.train_dictspace,param.batch_size,param.sequence_len,param.max_train_sets)
-    corpus.sentenceTotoken(param.dict_size)
-    INPUT_SHAPE = [param.batch_size]
-    OUTPUT_SHAPE = [param.batch_size]
-    VOCAB_SIZE = corpus.get_vocab_size()
-    model = Model(INPUT_SHAPE,OUTPUT_SHAPE,'lstm',param.rnn_cell_layer,param.rnn_cell_size,param.batch_size,VOCAB_SIZE,VOCAB_SIZE,param.embedding_len)
-    saver = tf.train.Saver()
-    global_steps = tf.get_variable(name='global_steps', dtype=tf.int32,
-                                            initializer=tf.zeros(shape=[1], dtype=tf.int32))
-
-    with tf.Session() as sess:
-        '''
-        restore
-        '''
-        ckpt = tf.train.get_checkpoint_state(param.train_workspace)
-        if ckpt and ckpt.model_checkpoint_path:
-            saver.restore(sess, ckpt.model_checkpoint_path)
-            last_step = int(ckpt.model_checkpoint_path.split('-')[-1])
-            logging.info('Session has loaded the Checkpoint: %s' % ckpt.model_checkpoint_path)
-        else:
-            last_step = -1
-            sess.run(tf.global_variables_initializer())
-            logging.info('No Checkpoint founded!')
-
-        decoder_xs = corpus.get_decoder_inputs()
-        for step in range(last_step+1,param.training_steps):
-            xs,ys,weights = corpus.next_batch()
-
-            feed_dict = {
-                model.learning_rate:min(0.22,param.lr*np.power(param.lr_decay,step / param.record_intervals))
-            }
-            for i,sxs in enumerate(model.xs):
-                feed_dict[sxs.name] = xs[i]
-            for i,sys in enumerate(model.ys):
-                feed_dict[sys.name] = ys[i]
-            for i, sys in enumerate(model.decoder_xs):
-                feed_dict[sys.name] = decoder_xs[i]
-            for i, sys in enumerate(model.weights):
-                feed_dict[sys.name] = weights[i]
-            loss,_,output = sess.run([model.cost,model.train_op,model.output],feed_dict=feed_dict)
-            if step % param.record_intervals == 0:
-                logging.info(
-                    'Learning Rate: %f' % ((param.lr * np.power(param.lr_decay, step / param.record_intervals))))
-                # run test_Set bad CASE wrong structure
-                # xs, ys = corpus.get_test_batch()
-                # costs = []
-                # outputs = []
-                # for index in range(0,len(xs),param.batch_size):
-                #     if index + param.batch_size >= len(xs):
-                #         continue
-                #     feed_dict = {
-                #         model.learning_rate: param.lr
-                #     }
-                #     for i, sxs in enumerate(model.xs):
-                #         feed_dict[sxs.name] = xs[i+index]
-                #     for i, sys in enumerate(model.ys):
-                #         feed_dict[sys.name] = ys[i+index]
-                #     for i, sys in enumerate(model.decoder_xs):
-                #         feed_dict[sys.name] = decoder_xs[i]
-                #     loss, output,r_loss = sess.run([model.cost,model.output,model.loss], feed_dict=feed_dict)
-                #     print r_loss
-                #     costs.append(loss)
-                #     outputs.extend(output)
-                # print costs
-                # loss = tf.reduce_sum(costs)
-                print 'step %d ---- loss:%s' % (step,loss)
-                ys = np.transpose(ys)
-                for i in range(10):
-                    line = ''
-                    for ids in range(8):
-                        id = np.argmax(output[ids][i])
-                        line = line + corpus.id_dict[id]
-                    line = line + '\t'
-                    for id in ys[i]:
-                        line = line + corpus.id_dict[id]
-                    print line.encode('utf-8')
-                save_path = saver.save(sess, param.train_workspace+'/save_net.ckpt',global_step=step)
-                print("Save to path: ", save_path)
-            global_steps = global_steps + 1
-
-    print 'hello world'
-
-
-if __name__ == '__main__':
-    param = HParam()
-    run(param)

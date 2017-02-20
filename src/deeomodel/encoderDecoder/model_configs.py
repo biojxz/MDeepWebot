@@ -11,19 +11,21 @@ class HParam:
 
         # General (Constant)
         self.sequence_len = 10
-        self.dict_size = 10500 # max number of tokens
-        self.embedding_len = 50
+        self.dict_size = 20000 # max number of tokens
+        self.sampled_size = 1024
+        self.embedding_len = 100
         self.rnn_cell = 'lstm'
         self.rnn_cell_layer = 4
-        self.rnn_cell_size = 256
+        self.rnn_cell_size = 320
 
         # Training
-        self.max_train_sets = 100000
+        self.max_train_sets = 10#1000000
         self.batch_size = 100
         self.training_steps = 9000000
-        self.record_intervals = 200
-        self.lr = 0.4
+        self.record_intervals = 100
+        self.lr = 0.7
         self.lr_decay = 0.99
+        self.min_lr = 0.25
 
 
         # Encoder (constant)

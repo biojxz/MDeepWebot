@@ -1,5 +1,5 @@
 #coding:utf-8
-from real_seq2seq import Model
+from encoder_decoder_model import Model
 from model_configs import HParam
 import jieba
 import tensorflow as tf
@@ -26,7 +26,7 @@ class TalkAPI():
         OUTPUT_SHAPE = [param.batch_size]
         VOCAB_SIZE = len(self.token2id)
         self.model = Model(INPUT_SHAPE, OUTPUT_SHAPE, 'lstm', param.rnn_cell_layer, param.rnn_cell_size, param.batch_size,
-                      VOCAB_SIZE, VOCAB_SIZE, param.embedding_len)
+                      VOCAB_SIZE, VOCAB_SIZE, param.embedding_len,param.sequence_len,param.sampled_size)
 
         sess = tf.Session()
         ckpt = tf.train.get_checkpoint_state(workspace)
